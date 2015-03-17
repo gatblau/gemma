@@ -1,0 +1,7 @@
+REQUEST:
+http://localhost:8080/service/app/a1
+method: GET
+accept: application-json
+
+RESPONSE:
+{ id:1, name='application 1' }

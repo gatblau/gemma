@@ -1,0 +1,113 @@
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import org.gradle.plugins.signing.Sign;
+import org.gradle.api.execution.TaskExecutionListener
+import org.gradle.api.Task
+
+plugins {
+    id "com.github.hierynomus.license" version "0.11.0"
+    id "com.jfrog.bintray" version "1.0"
+}
+
+apply plugin : 'java'
+apply plugin : 'eclipse'
+apply plugin : 'idea'
+apply plugin : 'maven'
+apply plugin : 'signing'
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+group	= 'org.gatblau.gemma'
+version = '0.0.1-b1'
+tasks.withType(JavaCompile) { options.encoding = 'UTF-8' }
+repositories {
+    mavenLocal()
+    mavenCentral()
+    maven { url 'http://repository.jboss.org/nexus/content/groups/public/' }
+}
+dependencies {
+    compile 'org.jboss.resteasy:resteasy-jaxrs:3.0.8.Final'
+    compile 'javax.enterprise:cdi-api:1.1'
+    testCompile 'junit:junit:4.11'
+    testCompile 'org.jboss.weld.se:weld-se-core:2.0.3.Final'
+    testCompile 'info.cukes:cucumber-weld:1.1.6'
+    testCompile 'info.cukes:cucumber-junit:1.1.6'
+    testCompile 'org.slf4j:slf4j-api:1.7.7'
+    testCompile 'ch.qos.logback:logback-classic:1.0.9'
+}
+license {
+    excludes(["**/*.txt", "**/*.properties", "**/*.xml", "**/*.md", "**/*.feature" ])
+}
+
+gradle.taskGraph.addTaskExecutionListener(new BeanFilesDeployer(projectDir.toString(), buildDir.toString()))
+
+// uncomment line below to enable signing
+// signing { sign configurations.archives }
+
+gradle.taskGraph.whenReady { taskGraph ->
+    if (taskGraph.allTasks.any { it instanceof Sign }) {
+        Console console = System.console()
+        console.printf "\n\nSigning Gemma \n\nEnter the following information:\n\n"
+        def id = console.readLine("Private Key Id (8 characters): ")
+        def file = console.readLine("Secret Key Ring File (absolute path): ")
+        def password = console.readPassword("Private Key Password: ")
+        allprojects { ext."signing.keyId" = id }
+        allprojects { ext."signing.secretKeyRingFile" = file }
+        allprojects { ext."signing.password" = password }
+    }
+}
+task sourcesJar(type: Jar, dependsOn: classes) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+artifacts {
+    archives sourcesJar, javadocJar
+}
+/*
+bintray {
+    user = bintray_user
+    key = bintray_api_key
+    configurations = ['archives']
+    dryRun = false
+    publish = false
+    pkg {
+        repo = 'releases'
+        name = 'gemma'
+        desc = 'A light weight library for documenting JAX-RS http services using Gherkin style functional specifications.'
+        websiteUrl = 'https://github.com/gatblau/gemma'
+        issueTrackerUrl = 'https://github.com/gatblau/gemma/issues'
+        vcsUrl = 'https://github.com/gatblau/gemma.git'
+        licenses = ['Apache-2.0']
+        labels = ['JAX-RS', 'Gherkin', 'Web Service Description', 'CDI', 'Cucumber-JVM']
+        publicDownloadNumbers = false
+        version.vcsTag = '0.0.1-b1'
+    }
+}
+*/
+class BeanFilesDeployer implements TaskExecutionListener {
+    private String buildDir, projectDir
+    BeanFilesDeployer(String projectDir, String buildDir) {
+        this.projectDir = projectDir + '/src/'
+        this.buildDir = buildDir
+    }
+    void beforeExecute(final Task task) {
+        if (task.name.equals("jar")) fixFolders("main","test")
+    }
+    void afterExecute(final Task task, final TaskState state) {
+    }
+    private void fixFolders(String...folders) {
+        for(String folder : folders) {
+            File targetFolder = new File(String.format("%s/classes/%s/META-INF", buildDir, folder))
+            File sourceFile = new File(String.format("%s/%s/resources/META-INF/beans.xml", projectDir, folder))
+            if (sourceFile.exists()) {
+                if (!targetFolder.exists()) targetFolder.mkdirs()
+                File targetFile = new File(String.format("%s/classes/%s/META-INF/beans.xml", buildDir, folder))
+                if (!targetFile.exists()) Files.copy(Paths.get(sourceFile.getAbsolutePath()), Paths.get(targetFile.getAbsolutePath()))
+            }
+        }
+    }
+}

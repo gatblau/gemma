@@ -1,0 +1,10 @@
+REQUEST:
+http://localhost:8080/service/app/a1
+method: GET
+accept: application-xml
+
+RESPONSE:
+<application>
+   <id>1</id>
+   <name>application 1</name>
+</application>
