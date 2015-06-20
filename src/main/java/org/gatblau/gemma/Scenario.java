@@ -34,6 +34,9 @@ public class Scenario implements Serializable {
      */
     public String[] step;
 
+    public Scenario() {
+    }
+
     public Scenario(String name, String[] steps) {
         this.title = name.trim();
         this.step = filter(steps);
