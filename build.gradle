@@ -18,7 +18,7 @@ apply plugin : 'signing'
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 group	= 'org.gatblau.gemma'
-version = '0.0.1-b1'
+version = '0.0.1'
 tasks.withType(JavaCompile) { options.encoding = 'UTF-8' }
 repositories {
     mavenLocal()
@@ -67,7 +67,7 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
 artifacts {
     archives sourcesJar, javadocJar
 }
-/*
+
 bintray {
     user = bintray_user
     key = bintray_api_key
@@ -84,10 +84,10 @@ bintray {
         licenses = ['Apache-2.0']
         labels = ['JAX-RS', 'Gherkin', 'Web Service Description', 'CDI', 'Cucumber-JVM']
         publicDownloadNumbers = false
-        version.vcsTag = '0.0.1-b1'
+        version.vcsTag = 'v0.0.1'
     }
 }
-*/
+
 class BeanFilesDeployer implements TaskExecutionListener {
     private String buildDir, projectDir
     BeanFilesDeployer(String projectDir, String buildDir) {
