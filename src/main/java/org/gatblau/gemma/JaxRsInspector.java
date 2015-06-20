@@ -49,12 +49,22 @@ public class JaxRsInspector implements ApiInspector {
         }
         java.lang.reflect.Method[] methods = clazz.getDeclaredMethods();
         for (java.lang.reflect.Method method : methods) {
+            if (!isJAXRS(method)) continue;
             Feature feature = new Feature();
             feature.functional = newFuncSpec(method);
             feature.technical = newTechSpec(method);
             spec.feature.add(feature);
         }
         return spec;
+    }
+
+    private boolean isJAXRS(java.lang.reflect.Method method) {
+        return (
+            method.getDeclaredAnnotation(GET.class) != null ||
+            method.getDeclaredAnnotation(PUT.class) != null ||
+            method.getDeclaredAnnotation(POST.class) != null ||
+            method.getDeclaredAnnotation(DELETE.class) != null
+        );
     }
 
     private FunctionalSpec newFuncSpec(java.lang.reflect.Method method) {
